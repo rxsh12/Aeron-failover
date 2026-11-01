@@ -1,0 +1,94 @@
+# Network members in member-ID order. Every cluster node must use the same list.
+# Use three distinct private IP addresses in a real deployment; localhost is for a
+# single-machine development cluster. Host C also runs the stable proxy in this demo.
+cluster.hosts=127.0.0.1,127.0.0.1,127.0.0.1
+
+# Root directory for member-0, member-1, and member-2 durable cluster state.
+# Keep it on persistent storage, back it up appropriately, and never copy one
+# member's directory over another member's directory. Paths are relative to the
+# directory where each Java process is launched.
+cluster.data-dir=data
+
+# Prefix for Aeron IPC/shared-memory directories. Empty uses Aeron's platform default.
+# In a multi-process local test, use a unique prefix per independent cluster.
+aeron.directory-prefix=
+
+# Cluster UDP port layout. For each member, base + (member ID * ports-per-member)
+# is the member's port block; the offsets below select each Aeron endpoint.
+cluster.port-base=9000
+cluster.ports-per-member=100
+cluster.archive-control-offset=1
+cluster.client-facing-offset=2
+cluster.member-facing-offset=3
+cluster.log-offset=4
+cluster.transfer-offset=5
+# Health PING/PONG TCP port is health-port-base + member ID.
+cluster.health-port-base=9300
+# Health server timeout for an individual PING connection.
+cluster.health-read-timeout-ms=1000
+# Aeron publication term size used by local and cluster channels.
+cluster.term-length=64k
+
+# The stable proxy endpoint to which consumers and the producer host connect.
+# Set proxy.host to the actual proxy machine's private IP for a multi-host run.
+proxy.host=127.0.0.1
+proxy.tcp-port=5001
+# Fire-and-forget 100-byte producer datagrams. This port uses UDP.
+proxy.producer-udp-port=5003
+# TCP endpoint queried by the cluster monitor. Keep the bind address at loopback
+# unless the monitor runs in a separate container/network namespace.
+proxy.leader-status-port=5002
+# Listener bind address for monitor status. Expose only on a trusted network.
+proxy.leader-status-bind-address=127.0.0.1
+# Durable proxy outbox and its adjacent .commit cursor. Do not delete while running.
+proxy.outbox-file=data/proxy-outbox.bin
+# Maximum queued observer sequence notifications per connected subscriber.
+proxy.client-queue-capacity=1024
+# Bounded producer datagram queue; overflow is reported as dropped at the proxy.
+proxy.producer-queue-capacity=65536
+# Maximum payloads journaled in one batch before syncing the outbox.
+proxy.producer-batch-size=512
+# Retry delay for an offered cluster message with no commit response.
+proxy.request-retry-timeout-ms=1000
+# Minimum nanoseconds between attempts to offer successive outbox messages; zero
+# means no intentional delay. The current proxy still forwards one at a time.
+proxy.offer-interval-ns=0
+# Delay before retrying a failed Aeron Cluster client connection.
+proxy.reconnect-delay-ms=250
+# Timeout while waiting for the producer queue before reporting counters.
+proxy.queue-poll-timeout-ms=1
+# Interval between UDP ingress and cluster commit rate reports.
+proxy.metrics-report-interval-ms=1000
+# Enables per-subscriber diagnostic output when true.
+proxy.verbose=false
+
+# Leader monitor cadence and TCP timeouts.
+monitor.ping-interval-ms=1000
+monitor.connect-timeout-ms=500
+monitor.read-timeout-ms=500
+# Consecutive missed PONGs before the monitor reports the leader unreachable.
+monitor.misses-before-down=3
+# Host where the proxy's loopback-only leader-status socket is reachable. Keep
+# the monitor on the proxy host or use a secure local tunnel from a remote host.
+monitor.proxy-status-host=127.0.0.1
+
+# Subscriber reconnect delay, saved observation cursor, and diagnostic verbosity.
+subscriber.cursor-file=data/last-sequence.txt
+subscriber.reconnect-delay-ms=250
+subscriber.connect-timeout-ms=3000
+subscriber.verbose=false
+
+# C producer pacing. Zero means unpaced sending; the configured rate is a target.
+publisher.target-messages-per-second=10000
+# Persistent ID state avoids reusing IDs after restart. Reserve size controls the
+# maximum ID block reserved ahead of use; skipped reserved IDs may look like gaps.
+publisher.id-state-file=data/publisher-id.txt
+publisher.id-block-size=1000000
+# How often the C sender prints local send-rate statistics.
+publisher.report-interval-ms=1000
+# Append each successfully sent 100-byte payload for post-run delivery auditing.
+# Set to "off" to disable capture. Capture writes add producer-side I/O overhead.
+publisher.sent-capture-file=data/publisher-sent.bin
+
+# The 100-byte payload layout (ID, timestamp, test data) and three-voter cluster
+# membership are protocol invariants in this demo, not runtime-tunable settings.

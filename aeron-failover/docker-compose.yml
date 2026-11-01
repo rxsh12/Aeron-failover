@@ -1,0 +1,106 @@
+services:
+  server-a:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.ClusterNode", "0"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - server-a-data:/data
+    restart: unless-stopped
+    init: true
+
+  server-b:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.ClusterNode", "1"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - server-b-data:/data
+    restart: unless-stopped
+    init: true
+
+  server-c:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.ClusterNode", "2"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - server-c-data:/data
+    restart: unless-stopped
+    init: true
+
+  proxy:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.TcpProxy"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - proxy-data:/data
+    ports:
+      - "${PROXY_PUBLISH_HOST:-0.0.0.0}:5000:5000/tcp"
+      - "${PROXY_PUBLISH_HOST:-0.0.0.0}:5003:5003/udp"
+    depends_on:
+      - server-a
+      - server-b
+      - server-c
+    restart: unless-stopped
+    init: true
+
+  monitor:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.ClusterMonitor"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+    depends_on:
+      - proxy
+    restart: unless-stopped
+    init: true
+
+  publisher:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    entrypoint: ["/app/publisher"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - publisher-data:/data
+    depends_on:
+      - proxy
+    profiles: ["producer"]
+    restart: unless-stopped
+    init: true
+
+  subscriber:
+    image: aeron-failover:local
+    build:
+      context: ..
+      dockerfile: aeron-failover/Dockerfile
+    command: ["demo.aeron.TcpSubscriber"]
+    volumes:
+      - ./docker/config.properties:/app/config.properties:ro
+      - subscriber-data:/data
+    depends_on:
+      - proxy
+    profiles: ["observer"]
+    restart: unless-stopped
+    init: true
+
+volumes:
+  server-a-data:
+  server-b-data:
+  server-c-data:
+  proxy-data:
+  publisher-data:
+  subscriber-data:

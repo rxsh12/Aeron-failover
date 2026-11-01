@@ -1,0 +1,8 @@
+**
+!aeron-failover/
+!aeron-failover/**
+!shm-udp/
+!shm-udp/publisher.c
+aeron-failover/target/
+aeron-failover/data/
+aeron-failover/.git/
